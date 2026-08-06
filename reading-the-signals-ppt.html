@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reading the Signals / Ramyashree Shetty</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#000; --offwhite:#FFFDF5;
+  --pink:#FE90E8; --blue:#C0F7FE; --green:#99E885;
+  --yellow:#F7CB46; --cream:#FFDC8B;
+  --bd:4px solid var(--black); --sh:8px 8px 0 var(--black); --sh-sm:4px 4px 0 var(--black);
+  --pad:clamp(26px,3.4vw,58px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter','Helvetica Neue',Arial,system-ui,sans-serif;background:var(--offwhite);color:var(--black);
+  scroll-snap-type:y mandatory;overflow-y:scroll;height:100vh}
+
+.panel{min-height:100vh;height:100vh;scroll-snap-align:start;scroll-snap-stop:always;
+  padding:var(--pad);padding-left:clamp(52px,5.5vw,104px);
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;overflow:hidden;border-bottom:var(--bd)}
+.panel>*{position:relative;z-index:2}
+.bg-pink{background:var(--pink)}.bg-blue{background:var(--blue)}.bg-green{background:var(--green)}
+.bg-yellow{background:var(--yellow)}.bg-cream{background:var(--cream)}
+.bg-black{background:var(--black);color:var(--offwhite)}.bg-black .label{color:var(--yellow)}
+
+/* soft title tone */
+.bg-blush{background:#FFE4F3}
+
+/* floating guess bubbles */
+.bub{position:absolute;z-index:3;background:var(--offwhite);border:var(--bd);box-shadow:var(--sh-sm);
+  padding:.4rem .85rem;font-family:'Space Grotesk','SF Mono',Consolas,monospace;font-weight:700;
+  font-size:clamp(11px,1vw,16px);white-space:nowrap}
+.in .bub{animation:fl 3.6s ease-in-out infinite}
+
+/* wordmark badge for company names */
+.mark{display:inline-block;border:3px solid var(--black);box-shadow:var(--sh-sm);
+  padding:.3rem .7rem;font-family:'Space Grotesk','SF Mono',Consolas,monospace;font-weight:700;
+  font-size:clamp(12px,1.05vw,17px);letter-spacing:.02em;background:var(--offwhite)}
+.cite{font-family:'Space Grotesk','SF Mono',Consolas,monospace;font-weight:600;
+  font-size:clamp(11px,.9vw,14px);opacity:.75}
+
+/* title graphic motion */
+.float1,.float2,.float3{transform-box:fill-box;transform-origin:center}
+.in .float1{animation:fl 3.4s ease-in-out infinite}
+.in .float2{animation:fl 4.1s .5s ease-in-out infinite}
+.in .float3{animation:fl 3.8s .9s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+.tw{opacity:.3}
+.in .tw{animation:tw 2.3s ease-in-out infinite}
+.in .tw:nth-of-type(even){animation-delay:1.15s}
+@keyframes tw{0%,100%{opacity:.3}50%{opacity:1}}
+
+.label{font-family:'Space Grotesk','SF Mono',Consolas,monospace;font-weight:600;font-size:clamp(11px,.92vw,14px);
+  letter-spacing:.11em;text-transform:uppercase;margin-bottom:1rem;display:block}
+h1{font-weight:900;font-size:clamp(38px,6.6vw,112px);line-height:.88;letter-spacing:-.035em;text-transform:uppercase}
+h2{font-weight:900;font-size:clamp(25px,3.9vw,64px);line-height:.97;letter-spacing:-.025em;text-transform:uppercase}
+h3{font-weight:800;font-size:clamp(17px,1.7vw,27px);line-height:1.08;letter-spacing:-.01em;text-transform:uppercase}
+p{font-weight:500;font-size:clamp(14px,1.12vw,19px);line-height:1.55;max-width:62ch}
+.mono{font-family:'Space Grotesk','SF Mono',Consolas,monospace}
+.stat{font-weight:900;font-size:clamp(54px,12.5vw,220px);line-height:.82;letter-spacing:-.05em}
+.card{background:var(--offwhite);border:var(--bd);box-shadow:var(--sh);padding:clamp(17px,1.9vw,32px)}
+.tag{display:inline-block;background:var(--black);color:var(--offwhite);border:var(--bd);
+  box-shadow:var(--sh-sm);padding:.45rem .95rem;font-family:'Space Grotesk','SF Mono',Consolas,monospace;
+  font-weight:700;font-size:clamp(11px,.92vw,14px);letter-spacing:.08em;text-transform:uppercase}
+.sticker{position:absolute;z-index:3;background:var(--yellow);border:var(--bd);box-shadow:var(--sh-sm);
+  padding:.5rem .9rem;font-family:'Space Grotesk','SF Mono',Consolas,monospace;font-weight:700;
+  font-size:clamp(11px,.9vw,15px);letter-spacing:.06em;text-transform:uppercase;transform:rotate(-6deg)}
+.row{display:flex;gap:clamp(11px,1.5vw,26px);align-items:stretch;flex-wrap:wrap}
+.row>*{flex:1 1 0;min-width:196px}
+.num{font-weight:900;font-size:clamp(28px,3.4vw,55px);line-height:1;display:block}
+.strike{text-decoration:line-through;text-decoration-thickness:5px;opacity:.48}
+
+table{border-collapse:collapse;width:100%;max-width:920px;background:var(--offwhite);
+  border:var(--bd);box-shadow:var(--sh);font-family:'Space Grotesk','SF Mono',Consolas,monospace}
+th,td{border:3px solid var(--black);padding:clamp(7px,.82vw,14px);text-align:center;
+  font-size:clamp(13px,1.12vw,20px);font-weight:600}
+th{background:var(--black);color:var(--offwhite);letter-spacing:.08em;text-transform:uppercase;
+  font-size:clamp(10px,.85vw,15px)}
+
+.chart{width:100%;max-width:1020px;background:var(--offwhite);border:var(--bd);box-shadow:var(--sh)}
+.ax{stroke:#000;stroke-width:3}
+.ln{fill:none;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:2000;stroke-dashoffset:2000}
+.in .ln{animation:draw 1.4s cubic-bezier(.6,0,.3,1) forwards}
+.in .ln.d2{animation-delay:.45s}
+@keyframes draw{to{stroke-dashoffset:0}}
+.dot{opacity:0}.in .dot{animation:pop .35s 1.2s ease-out forwards}
+@keyframes pop{to{opacity:1}}
+.zone{fill:var(--pink);opacity:0}
+.in .zone{animation:fade .6s 1.5s ease-out forwards}
+@keyframes fade{to{opacity:.4}}
+.anno{opacity:0}.in .anno{animation:pop .5s 1.9s ease-out forwards}
+.clab{font-family:'Space Grotesk','SF Mono',Consolas,monospace;font-weight:700;font-size:15px}
+.gap{stroke:#000;stroke-width:4;stroke-dasharray:8 8}
+
+.loop{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:.8rem}
+.node{border:var(--bd);box-shadow:var(--sh-sm);padding:clamp(11px,1.3vw,20px);
+  flex:1 1 0;min-width:146px;opacity:.28}
+.in .node{animation:lite 5.6s infinite}
+.in .node:nth-child(1){animation-delay:0s}.in .node:nth-child(3){animation-delay:1.4s}
+.in .node:nth-child(5){animation-delay:2.8s}.in .node:nth-child(7){animation-delay:4.2s}
+@keyframes lite{0%,12%{opacity:1;transform:translateY(-5px)}30%,100%{opacity:.28;transform:none}}
+.arw{font-weight:900;font-size:clamp(19px,2.1vw,32px);flex:0 0 auto}
+
+.chibi{display:block}
+.in .chibi{animation:bob 2.9s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.zzz{opacity:0}.in .zzz{animation:zzz 2.4s infinite}
+@keyframes zzz{0%{opacity:0;transform:translate(0,0)}40%{opacity:1}100%{opacity:0;transform:translate(10px,-20px)}}
+.flick{transform-origin:center bottom}
+.in .flick{animation:flick .55s ease-in-out infinite alternate}
+@keyframes flick{from{transform:scaleY(1) scaleX(1)}to{transform:scaleY(1.12) scaleX(.94)}}
+.ring{stroke-dasharray:440;stroke-dashoffset:440}
+.in .ring{animation:fill 1.5s .3s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes fill{to{stroke-dashoffset:var(--off)}}
+
+/* phone frame */
+.phone{border:var(--bd);border-radius:34px;box-shadow:var(--sh);background:var(--offwhite);
+  padding:clamp(15px,1.7vw,26px);max-width:820px;position:relative}
+.phone::before{content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:92px;height:9px;background:var(--black);border-radius:6px}
+.notif{border:3px solid var(--black);border-radius:16px;padding:clamp(13px,1.4vw,22px);
+  margin-top:1.5rem;display:flex;gap:.95rem;align-items:flex-start}
+.appicon{flex:0 0 auto;width:42px;height:42px;border:3px solid var(--black);border-radius:11px;
+  background:var(--pink);display:grid;place-items:center;font-weight:900;font-size:20px}
+
+.rv{opacity:0;transform:translateY(22px)}
+.in .rv{animation:up .55s cubic-bezier(.2,.7,.3,1) forwards}
+.in .rv:nth-child(2){animation-delay:.08s}.in .rv:nth-child(3){animation-delay:.16s}
+.in .rv:nth-child(4){animation-delay:.24s}.in .rv:nth-child(5){animation-delay:.32s}
+@keyframes up{to{opacity:1;transform:none}}
+
+.deco{position:absolute;z-index:1;border:var(--bd);pointer-events:none}
+.d1{width:178px;height:178px;background:var(--yellow);right:-57px;top:-57px;transform:rotate(18deg)}
+.d2{width:138px;height:138px;background:var(--green);left:-46px;bottom:-46px;transform:rotate(-14deg);border-radius:50%}
+.d3{width:216px;height:72px;background:var(--pink);right:-36px;bottom:9%;transform:rotate(-9deg)}
+
+/* section rail */
+#rail{position:fixed;left:0;top:0;bottom:0;width:clamp(34px,3.4vw,62px);z-index:98;
+  background:var(--black);border-right:var(--bd);display:flex;flex-direction:column;
+  justify-content:center;gap:clamp(18px,2.6vh,40px);align-items:center;padding:1rem 0}
+#rail span{writing-mode:vertical-rl;font-family:'Space Grotesk','SF Mono',Consolas,monospace;font-weight:700;
+  font-size:clamp(9px,.75vw,12px);letter-spacing:.22em;text-transform:uppercase;
+  color:#666;transition:color .3s}
+#rail span.on{color:var(--yellow)}
+#bar{position:fixed;top:0;left:0;height:8px;background:var(--pink);z-index:99;
+  border-bottom:3px solid var(--black);width:0}
+#count{position:fixed;right:14px;bottom:12px;z-index:99;background:var(--black);color:var(--offwhite);
+  border:3px solid var(--black);padding:.35rem .7rem;font-family:'Space Grotesk','SF Mono',Consolas,monospace;
+  font-weight:700;font-size:12px;letter-spacing:.1em}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .rv,.dot,.anno{opacity:1;transform:none}.ln{stroke-dashoffset:0}
+  .node{opacity:1}.zone{opacity:.4}.ring{stroke-dashoffset:var(--off)}
+}
+@media print{
+  @page{size:297mm 167mm;margin:0}
+  *,*::before,*::after{
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+    color-adjust:exact!important}
+  body{height:auto;overflow:visible;scroll-snap-type:none;background:var(--offwhite)}
+  .panel{height:167mm;min-height:167mm;break-after:page;page-break-after:always;
+    padding:14mm;overflow:hidden}
+  .panel:last-of-type{break-after:auto;page-break-after:auto}
+  #bar,#count,#rail,.deco{display:none}
+  .rv,.dot,.anno,.bub{opacity:1!important;transform:none!important}
+  .bub{position:static;display:inline-block;margin:0 .3rem .3rem 0}
+  .ln{stroke-dashoffset:0!important}.node{opacity:1!important}.zone{opacity:.4!important}
+  .ring{stroke-dashoffset:var(--off)!important}
+  .chibi{animation:none!important}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div><div id="count">01</div>
+<nav id="rail" aria-hidden="true">
+  <span data-s="0">Start</span><span data-s="1">Signals</span><span data-s="2">Build</span><span data-s="3">Design</span>
+</nav>
+
+<!-- 01 TITLE -->
+<section class="panel bg-blush" data-s="0">
+  <div class="deco d2"></div>
+  <div style="display:flex;align-items:center;gap:clamp(20px,3.5vw,68px);flex-wrap:wrap">
+    <div style="flex:1 1 340px">
+      <h1 class="rv">Reading<br>the Signals</h1>
+      <h3 class="rv" style="font-weight:700;margin-top:1.1rem">Making wellness tech that actually listens</h3>
+      <div class="rv" style="margin-top:1.7rem;display:flex;gap:.6rem;flex-wrap:wrap">
+        <span class="tag">Ramyashree Shetty</span>
+        <span class="tag" style="background:var(--pink);color:var(--black)">Data Engineer at Radix</span>
+      </div>
+    </div>
+
+    <svg class="rv" width="330" height="350" viewBox="0 0 320 340" style="flex:0 0 auto"
+         aria-label="A phone showing two lines trending downward, with sleep, mood and streak badges around it">
+      <!-- sparkles -->
+      <path class="tw" d="M40 44 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#F7CB46"/>
+      <path class="tw" d="M290 130 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#F7CB46"/>
+      <path class="tw" d="M28 250 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#F7CB46"/>
+      <path class="tw" d="M186 306 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3 Z" fill="#F7CB46"/>
+
+      <!-- phone -->
+      <g transform="rotate(-5 160 176)">
+        <rect x="100" y="58" width="120" height="234" rx="25" fill="#FFFDF5" stroke="#000" stroke-width="5"/>
+        <rect x="141" y="69" width="38" height="7" rx="3.5" fill="#000"/>
+        <rect x="112" y="86" width="96" height="182" rx="11" fill="#FFFDF5" stroke="#000" stroke-width="3.5"/>
+        <rect x="164" y="92" width="40" height="170" fill="#FE90E8" opacity=".28"/>
+        <polyline points="120,128 142,139 164,157 186,175 200,167" fill="none" stroke="#99E885"
+          stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="120,200 142,209 164,222 186,236 200,229" fill="none" stroke="#FE90E8"
+          stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="146" y="276" width="28" height="5" rx="2.5" fill="#000"/>
+      </g>
+
+      <!-- sleep badge -->
+      <g class="float1">
+        <circle cx="50" cy="104" r="31" fill="#FFDC8B" stroke="#000" stroke-width="4.5"/>
+        <path d="M58 92 a13 13 0 1 0 0 24 a16 16 0 0 1 0 -24 Z" fill="#000"/>
+      </g>
+      <!-- mood badge -->
+      <g class="float2">
+        <circle cx="272" cy="66" r="29" fill="#99E885" stroke="#000" stroke-width="4.5"/>
+        <circle cx="263" cy="60" r="3.4" fill="#000"/><circle cx="281" cy="60" r="3.4" fill="#000"/>
+        <path d="M262 74 q10 9 20 0" stroke="#000" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- streak badge -->
+      <g class="float3">
+        <circle cx="274" cy="240" r="31" fill="#FE90E8" stroke="#000" stroke-width="4.5"/>
+        <path d="M274 222 c7 11 12 15 12 25 a12 12 0 0 1 -24 0 c0 -10 7 -13 12 -25 Z"
+              fill="#F7CB46" stroke="#000" stroke-width="3.5"/>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<!-- 02 THE QUESTION -->
+<section class="panel" data-s="0">
+  <div class="deco d3"></div>
+  <span class="bub" style="top:12%;left:8%;transform:rotate(-7deg)">sleep</span>
+  <span class="bub" style="top:9%;right:26%;transform:rotate(5deg);animation-delay:.4s">screen time</span>
+  <span class="bub" style="top:26%;right:9%;transform:rotate(-4deg);animation-delay:.9s">steps</span>
+  <span class="bub" style="bottom:22%;left:11%;transform:rotate(6deg);animation-delay:1.3s">how much they text</span>
+  <span class="bub" style="bottom:13%;right:14%;transform:rotate(-6deg);animation-delay:.7s">online at 3am</span>
+  <span class="bub" style="bottom:34%;right:31%;transform:rotate(8deg);animation-delay:1.6s">posting less</span>
+  <span class="label rv">One word is fine</span>
+  <h2 class="rv">If you were building an app<br>that knows when someone<br>isn't doing okay,<br>what would you measure?</h2>
+  <div class="rv" style="margin-top:1.9rem"><span class="tag">I'll start you off. Sleep.</span></div>
+</section>
+
+<!-- 03 THE NUMBER -->
+<section class="panel bg-black" data-s="1">
+  <div style="display:flex;align-items:center;gap:clamp(20px,4vw,76px);flex-wrap:wrap">
+    <div>
+      <span class="label rv">Aisha, last night</span>
+      <div class="stat rv" style="color:var(--yellow)">5 HRS<br>12 MIN</div>
+      <h3 class="rv" style="margin-top:1.5rem;color:var(--offwhite)">Is she okay?</h3>
+    </div>
+    <svg class="chibi" width="252" height="277" viewBox="0 0 200 220" aria-label="Aisha, a young woman with a rose brown bob, asleep in bed">
+      <g class="zzz">
+        <text x="164" y="52" font-family="Space Grotesk" font-size="26" font-weight="700" fill="#F7CB46">z</text>
+        <text x="180" y="30" font-family="Space Grotesk" font-size="16" font-weight="700" fill="#F7CB46">z</text>
+      </g>
+      <!-- pillow -->
+      <rect x="12" y="46" width="176" height="106" rx="36" fill="#FFFDF5" stroke="#000" stroke-width="4"/>
+      <!-- hair mass, dome with jagged tips like the ref -->
+      <path d="M100 34 C140 34 170 62 170 106
+               L172 130 L158 122 L164 150 L150 141 L155 168 L141 157 L143 178
+               L57 178 L59 157 L45 168 L50 141 L36 150 L42 122 L28 130 L30 106
+               C30 62 60 34 100 34 Z"
+            fill="#C98A78" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+      <!-- face -->
+      <ellipse cx="100" cy="104" rx="48" ry="46" fill="#FCEADB" stroke="#000" stroke-width="4"/>
+      <!-- curtain bangs with the centre peak -->
+      <path d="M52 100 C54 64 74 50 100 50 C126 50 146 64 148 100
+               C142 76 128 66 112 68 L100 92 L88 68 C72 66 58 76 52 100 Z"
+            fill="#C98A78" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+      <!-- hair clips -->
+      <ellipse cx="63" cy="76" rx="12" ry="5" fill="#FFFDF5" stroke="#000" stroke-width="3" transform="rotate(-16 63 76)"/>
+      <ellipse cx="137" cy="76" rx="12" ry="5" fill="#FFFDF5" stroke="#000" stroke-width="3" transform="rotate(16 137 76)"/>
+      <!-- closed eyes, big and lashed -->
+      <path d="M64 104 Q77 121 90 104" stroke="#000" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M110 104 Q123 121 136 104" stroke="#000" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M62 101 l-6 -5 M138 101 l6 -5" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+      <!-- blush and tiny mouth -->
+      <ellipse cx="66" cy="124" rx="11" ry="6.5" fill="#F5B49B"/>
+      <ellipse cx="134" cy="124" rx="11" ry="6.5" fill="#F5B49B"/>
+      <path d="M94 130 q6 6 12 0" stroke="#000" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <!-- duvet -->
+      <rect x="2" y="166" width="196" height="54" rx="15" fill="#C0F7FE" stroke="#000" stroke-width="4"/>
+      <path d="M2 185 h196" stroke="#000" stroke-width="3.5"/>
+      <!-- hand on the fold -->
+      <path d="M118 166 q16 0 17 13 q-9 6 -17 0 Z" fill="#FCEADB" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+      <!-- locks spilling over the duvet, jagged tips -->
+      <path d="M40 152 L34 176 L46 170 L42 194 L54 182 L56 152 Z"
+            fill="#C98A78" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M160 152 L166 176 L154 170 L158 194 L146 182 L144 152 Z"
+            fill="#C98A78" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</section>
+
+<!-- 04 THREE WAYS WRONG -->
+<section class="panel bg-blue" data-s="1">
+  <span class="label rv">Three reasons that number tells you nothing</span>
+  <div class="row" style="margin-top:.5rem">
+    <div class="card rv">
+      <svg class="chibi" width="80" height="80" viewBox="0 0 100 100" aria-label="Broken device">
+        <rect x="29" y="14" width="42" height="70" rx="8" fill="#FFFDF5" stroke="#000" stroke-width="5"/>
+        <path d="M39 40 l22 22 M61 40 l-22 22" stroke="#000" stroke-width="6" stroke-linecap="round"/>
+        <path d="M44 20 h12" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <span class="num" style="margin-top:.55rem">01</span><h3>The device got it wrong</h3>
+      <p style="font-size:clamp(13px,1vw,17px);margin-top:.45rem">Lying still watching TikTok, logged as sleep.</p></div>
+    <div class="card rv" style="background:var(--yellow)">
+      <svg class="chibi" width="96" height="120" viewBox="0 0 120 150" aria-label="Aisha standing, this is normal for her">
+        <ellipse cx="60" cy="140" rx="30" ry="6" fill="#000" opacity=".14"/>
+        <path d="M60 12 C88 12 108 32 108 60 L110 78 L100 72 L104 90 L94 83 L96 100 L60 100 L24 100
+                 L26 83 L16 90 L20 72 L10 78 L12 60 C12 32 32 12 60 12 Z"
+              fill="#C98A78" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M52 96 h16 v16 h-16 Z" fill="#FCEADB" stroke="#000" stroke-width="3"/>
+        <path d="M36 106 h48 l5 24 h-58 Z" fill="#D98F76" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M38 128 h44 l4 16 h-52 Z" fill="#C9B49E" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 128 v16 M60 128 v16 M70 128 v16" stroke="#000" stroke-width="1.6" opacity=".5"/>
+        <ellipse cx="60" cy="58" rx="36" ry="34" fill="#FCEADB" stroke="#000" stroke-width="3.5"/>
+        <path d="M25 56 C27 30 42 20 60 20 C78 20 93 30 95 56
+                 C90 39 80 32 69 33 L60 51 L51 33 C40 32 30 39 25 56 Z"
+              fill="#C98A78" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+        <ellipse cx="46" cy="64" rx="10" ry="12" fill="#3D2420" stroke="#000" stroke-width="2.5"/>
+        <ellipse cx="74" cy="64" rx="10" ry="12" fill="#3D2420" stroke="#000" stroke-width="2.5"/>
+        <circle cx="43" cy="59" r="3.4" fill="#fff"/><circle cx="71" cy="59" r="3.4" fill="#fff"/>
+        <ellipse cx="31" cy="74" rx="7" ry="4" fill="#F5B49B"/>
+        <ellipse cx="89" cy="74" rx="7" ry="4" fill="#F5B49B"/>
+        <path d="M54 80 h12" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span class="num" style="margin-top:.55rem">02</span><h3>Five hours is her normal</h3>
+      <p style="font-size:clamp(13px,1vw,17px);margin-top:.45rem">Since she was nineteen. For Aisha that's a Tuesday.</p></div>
+    <div class="card rv">
+      <svg class="chibi" width="96" height="120" viewBox="0 0 120 150" aria-label="Aisha standing, out celebrating">
+        <ellipse cx="60" cy="140" rx="30" ry="6" fill="#000" opacity=".14"/>
+        <path d="M12 14 l5 -10 M108 14 l-5 -10 M60 6 v-6" stroke="#FE90E8" stroke-width="3.5" stroke-linecap="round"/>
+        <rect x="4" y="26" width="7" height="7" fill="#99E885" transform="rotate(20 7 30)"/>
+        <rect x="109" y="32" width="7" height="7" fill="#F7CB46" transform="rotate(-25 112 36)"/>
+        <path d="M60 12 C88 12 108 32 108 60 L110 78 L100 72 L104 90 L94 83 L96 100 L60 100 L24 100
+                 L26 83 L16 90 L20 72 L10 78 L12 60 C12 32 32 12 60 12 Z"
+              fill="#C98A78" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M52 96 h16 v16 h-16 Z" fill="#FCEADB" stroke="#000" stroke-width="3"/>
+        <path d="M36 106 h48 l5 24 h-58 Z" fill="#D98F76" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M30 108 l-14 -14" stroke="#D98F76" stroke-width="9" stroke-linecap="round"/>
+        <path d="M90 108 l14 -14" stroke="#D98F76" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="14" cy="92" r="5.5" fill="#FCEADB" stroke="#000" stroke-width="3"/>
+        <circle cx="106" cy="92" r="5.5" fill="#FCEADB" stroke="#000" stroke-width="3"/>
+        <path d="M38 128 h44 l4 16 h-52 Z" fill="#C9B49E" stroke="#000" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 128 v16 M60 128 v16 M70 128 v16" stroke="#000" stroke-width="1.6" opacity=".5"/>
+        <ellipse cx="60" cy="58" rx="36" ry="34" fill="#FCEADB" stroke="#000" stroke-width="3.5"/>
+        <path d="M25 56 C27 30 42 20 60 20 C78 20 93 30 95 56
+                 C90 39 80 32 69 33 L60 51 L51 33 C40 32 30 39 25 56 Z"
+              fill="#C98A78" stroke="#000" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M38 62 Q46 54 54 62" stroke="#000" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M66 62 Q74 54 82 62" stroke="#000" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="31" cy="74" rx="7" ry="4" fill="#F5B49B"/>
+        <ellipse cx="89" cy="74" rx="7" ry="4" fill="#F5B49B"/>
+        <path d="M52 78 q8 9 16 0" stroke="#000" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span class="num" style="margin-top:.55rem">03</span><h3>Something good happened</h3>
+      <p style="font-size:clamp(13px,1vw,17px);margin-top:.45rem">She was out. She had a great night. Your app is about to get worried about it.</p></div>
+  </div>
+  <h3 class="rv" style="margin-top:1.5rem">So sleep isn't a signal yet. It's a number.</h3>
+</section>
+
+<!-- 05 TWO SOURCES -->
+<section class="panel" data-s="1">
+  <span class="label rv">Everything you'll ever have comes from one of two places</span>
+  <div class="row" style="margin-top:.5rem">
+    <div class="card rv" style="background:var(--pink)">
+      <span class="tag" style="box-shadow:none">Source 01</span>
+      <h2 style="font-size:clamp(23px,2.7vw,42px);margin-top:.85rem">She tells you</h2>
+      <p style="margin-top:.85rem">The only data you'll ever get from inside her head. Your form, your scale, your timing.</p>
+      <svg viewBox="0 0 300 70" style="width:100%;margin-top:.9rem" aria-label="A line of check-ins that stops partway">
+        <polyline points="14,24 60,32 106,26 152,40" fill="none" stroke="#000" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="14" cy="24" r="6"/><circle cx="60" cy="32" r="6"/>
+        <circle cx="106" cy="26" r="6"/><circle cx="152" cy="40" r="6"/>
+        <path d="M164 44 h124" stroke="#000" stroke-width="5" stroke-dasharray="9 11" stroke-linecap="round"/>
+        <text x="180" y="30" font-family="Space Grotesk" font-size="17" font-weight="700">she went quiet</text>
+      </svg>
+      <p style="margin-top:.5rem;font-weight:800">It breaks one way. She stops. And she doesn't stop at random, she stops in the weeks you needed her most.</p></div>
+    <div class="card rv" style="background:var(--blue)">
+      <span class="tag" style="box-shadow:none">Source 02</span>
+      <h2 style="font-size:clamp(23px,2.7vw,42px);margin-top:.85rem">A device tells you</h2>
+      <p style="margin-top:.85rem">It keeps showing up whether she opens your app or not. That's the appeal.</p>
+      <svg viewBox="0 0 300 70" style="width:100%;margin-top:.9rem" aria-label="A device feeding a sealed black box you cannot open">
+        <rect x="10" y="18" width="34" height="40" rx="6" fill="#FFFDF5" stroke="#000" stroke-width="4"/>
+        <path d="M50 38 h30" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+        <path d="M74 32 l8 6 l-8 6" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="90" y="10" width="76" height="56" rx="8" fill="#000"/>
+        <text x="128" y="48" text-anchor="middle" font-family="Space Grotesk" font-size="34"
+          font-weight="700" fill="#F7CB46">?</text>
+        <text x="178" y="44" font-family="Space Grotesk" font-size="17" font-weight="700">you can't open this</text>
+      </svg>
+      <p style="margin-top:.5rem;font-weight:800">But you didn't measure it. Some company did, and they won't tell you how.</p></div>
+  </div>
+</section>
+
+<!-- 06 DIVERGENCE, two rings -->
+<section class="panel bg-yellow" data-s="1">
+  <span class="label rv">Same person, same night, two devices</span>
+  <div style="display:flex;align-items:center;gap:clamp(22px,4vw,72px);flex-wrap:wrap">
+    <div class="rv" style="display:flex;gap:clamp(16px,2.4vw,44px)">
+      <svg width="168" height="168" viewBox="0 0 160 160" aria-label="Device A, high score">
+        <circle cx="80" cy="80" r="70" fill="#FFFDF5" stroke="#000" stroke-width="5"/>
+        <circle class="ring" style="--off:96" cx="80" cy="80" r="70" fill="none" stroke="#99E885"
+          stroke-width="18" stroke-linecap="round" transform="rotate(-90 80 80)"/>
+        <circle cx="80" cy="80" r="55" fill="#FFFDF5" stroke="#000" stroke-width="4"/>
+        <text x="80" y="76" text-anchor="middle" font-family="Space Grotesk" font-weight="700"
+          font-size="15" letter-spacing="1">DEVICE</text>
+        <text x="80" y="99" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="26">A</text>
+      </svg>
+      <svg width="168" height="168" viewBox="0 0 160 160" aria-label="Device B, much lower score">
+        <circle cx="80" cy="80" r="70" fill="#FFFDF5" stroke="#000" stroke-width="5"/>
+        <circle class="ring" style="--off:255" cx="80" cy="80" r="70" fill="none" stroke="#FE90E8"
+          stroke-width="18" stroke-linecap="round" transform="rotate(-90 80 80)"/>
+        <circle cx="80" cy="80" r="55" fill="#FFFDF5" stroke="#000" stroke-width="4"/>
+        <text x="80" y="76" text-anchor="middle" font-family="Space Grotesk" font-weight="700"
+          font-size="15" letter-spacing="1">DEVICE</text>
+        <text x="80" y="99" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="26">B</text>
+      </svg>
+    </div>
+    <div>
+      <h2 class="rv" style="font-size:clamp(30px,5vw,84px)">20+<br>points<br>apart</h2>
+      <p class="rv" style="margin-top:1rem;font-weight:800">Each device scores against its own baseline, using its own formula. An 80 on one is not an 80 on another.</p>
+      <p class="rv cite" style="margin-top:.8rem">A 2025 review of composite health scores across the major manufacturers found almost none have been independently validated.<br>Doherty et al., Translational Exercise Biomedicine, 2025</p>
+    </div>
+  </div>
+</section>
+
+<!-- 07 THREE QUESTIONS -->
+<section class="panel" data-s="1">
+  <span class="label rv">Ask these of any signal, before you write a line of code</span>
+  <div style="display:flex;flex-direction:column;gap:clamp(10px,1.1vw,19px)">
+    <div class="card rv" style="display:flex;gap:1.25rem;align-items:baseline">
+      <span class="num" style="color:var(--pink);-webkit-text-stroke:2px #000">1</span>
+      <div><h3>Who made this number?</h3><p style="margin-top:.3rem">Her, a device, or your own app. That's what tells you how it can lie to you.</p></div></div>
+    <div class="card rv" style="display:flex;gap:1.25rem;align-items:baseline">
+      <span class="num" style="color:var(--green);-webkit-text-stroke:2px #000">2</span>
+      <div><h3>What does it mean when it's missing?</h3><p style="margin-top:.3rem">A skipped check-in and a dead phone look exactly the same in your database.</p></div></div>
+    <div class="card rv" style="display:flex;gap:1.25rem;align-items:baseline">
+      <span class="num" style="color:var(--blue);-webkit-text-stroke:2px #000">3</span>
+      <div><h3>Do you show this number back to her?</h3><p style="margin-top:.3rem">Just hang onto that one.</p></div></div>
+  </div>
+</section>
+
+<!-- 08 THE TABLE -->
+<section class="panel bg-cream" data-s="2">
+  <span class="sticker" style="top:11%;right:6%;background:var(--green)">7 days, 2 columns</span>
+  <span class="label rv">Aisha's week. This is what a hackathon app has after 48 hours.</span>
+  <table class="rv">
+    <tr><th>Day</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+    <tr><th>Sleep (hrs)</th><td>7.5</td><td>6.5</td><td>5.0</td><td>4.5</td><td>4.0</td><td>5.5</td><td>7.0</td></tr>
+    <tr><th>Mood (1 to 5)</th><td>4</td><td>3</td><td>2</td><td>2</td><td>1</td><td>2</td><td>3</td></tr>
+  </table>
+  <h3 class="rv" style="margin-top:1.5rem">Which day does something start going wrong?</h3>
+</section>
+
+<!-- 09 DIVIDER -->
+<section class="panel bg-green" data-s="2">
+  <div class="deco d1"></div>
+  <span class="label rv">Rolling average, two signals, one AND</span>
+  <h1 class="rv">Let's<br>build it</h1>
+  <div class="rv" style="margin-top:1.7rem"><span class="tag">Switch to BigQuery</span></div>
+</section>
+
+<!-- 10 THE CO-TREND -->
+<section class="panel" data-s="2">
+  <span class="label rv">3 day rolling average. What the query sees.</span>
+  <svg class="chart rv" viewBox="0 0 820 312" role="img" aria-label="Sleep and mood both trending down across seven days, flag firing days four to six">
+    <rect class="zone" x="380" y="42" width="280" height="248"/>
+    <text class="clab" x="390" y="34">FLAG FIRES, DAYS 4 TO 6</text>
+    <line class="ax" x1="60" y1="170" x2="790" y2="170"/>
+    <line class="ax" x1="60" y1="290" x2="790" y2="290"/>
+    <text class="clab" x="60" y="60">SLEEP, GOING DOWN</text>
+    <text class="clab" x="60" y="202">MOOD, ALSO GOING DOWN</text>
+    <path class="ln" stroke="#C0F7FE" d="M80,72.5 190,85 300,101.7 410,126.7 520,147.5 630,143.3 740,122.5"/>
+    <path class="ln" stroke="#000" stroke-width="2.5" d="M80,72.5 190,85 300,101.7 410,126.7 520,147.5 630,143.3 740,122.5"/>
+    <path class="ln d2" stroke="#FE90E8" d="M80,205 190,217.5 300,230 410,246.7 520,263.3 630,263.3 740,255"/>
+    <path class="ln d2" stroke="#000" stroke-width="2.5" d="M80,205 190,217.5 300,230 410,246.7 520,263.3 630,263.3 740,255"/>
+    <g class="dot" stroke="#000" stroke-width="3">
+      <circle cx="410" cy="126.7" r="9" fill="#C0F7FE"/><circle cx="520" cy="147.5" r="9" fill="#C0F7FE"/>
+      <circle cx="630" cy="143.3" r="9" fill="#C0F7FE"/><circle cx="410" cy="246.7" r="9" fill="#FE90E8"/>
+      <circle cx="520" cy="263.3" r="9" fill="#FE90E8"/><circle cx="630" cy="263.3" r="9" fill="#FE90E8"/>
+    </g>
+    <g class="anno">
+      <path d="M700 216 q34 -18 52 -44" stroke="#000" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M752 172 l-13 5 M752 172 l0 14" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
+      <text class="clab" x="656" y="234" font-size="14">both of them, together</text>
+    </g>
+  </svg>
+  <h3 class="rv" style="margin-top:1rem">Not one low number. Two things sliding down at the same time.</h3>
+</section>
+
+<!-- 11 THE SIGNAL DIES -->
+<section class="panel bg-black" data-s="2">
+  <span class="sticker" style="top:8%;right:6%;background:var(--pink)">she can see her streak now</span>
+  <span class="label rv">Same query. Same person. Same rough week.</span>
+  <svg class="chart rv" viewBox="0 0 820 312" role="img" aria-label="Sleep still declining but reported mood is flat, so the flag never fires">
+    <line class="ax" x1="60" y1="170" x2="790" y2="170"/>
+    <line class="ax" x1="60" y1="290" x2="790" y2="290"/>
+    <text class="clab" x="60" y="60">SLEEP, EXACTLY THE SAME</text>
+    <text class="clab" x="60" y="202">MOOD, "FINE, FINE, FINE"</text>
+    <path class="ln" stroke="#C0F7FE" d="M80,72.5 190,85 300,101.7 410,126.7 520,147.5 630,143.3 740,122.5"/>
+    <path class="ln" stroke="#000" stroke-width="2.5" d="M80,72.5 190,85 300,101.7 410,126.7 520,147.5 630,143.3 740,122.5"/>
+    <path class="ln d2" stroke="#99E885" d="M80,205 190,217.5 300,221.7 410,230 520,230 630,230 740,230"/>
+    <path class="ln d2" stroke="#000" stroke-width="2.5" d="M80,205 190,217.5 300,221.7 410,230 520,230 630,230 740,230"/>
+    <line class="gap" x1="520" y1="205" x2="520" y2="290"/>
+    <text class="clab" x="482" y="200" font-size="13">SKIPPED</text>
+    <g class="anno"><text class="clab" x="574" y="118" font-size="19">NO FLAG. NOT ONCE.</text></g>
+  </svg>
+  <h2 class="rv" style="margin-top:1rem;font-size:clamp(21px,2.9vw,48px)">She got worse.<br><span style="color:var(--yellow)">The data got healthier.</span></h2>
+</section>
+
+<!-- 12 THE LOOP -->
+<section class="panel" data-s="3">
+  <span class="label rv">When a model's own output changes the thing it was trying to measure</span>
+  <div class="loop">
+    <div class="node" style="background:var(--cream)"><h3>Detector</h3><p style="font-size:14px">flags low mood</p></div>
+    <span class="arw">&rarr;</span>
+    <div class="node" style="background:var(--yellow)"><h3>App tells her</h3><p style="font-size:14px">"you seem low this week"</p></div>
+    <span class="arw">&rarr;</span>
+    <div class="node" style="background:var(--pink)">
+      <div style="display:flex;align-items:center;gap:.5rem">
+        <svg width="24" height="30" viewBox="0 0 24 30" class="flick" aria-hidden="true">
+          <path d="M12 1 C17 9 21 12 21 19 a9 9 0 0 1 -18 0 C3 12 8 10 12 1Z" fill="#F7CB46" stroke="#000" stroke-width="2.5"/>
+        </svg>
+        <h3>She stops</h3></div>
+      <p style="font-size:14px;margin-top:.35rem">rounds up, or skips. Streak makes it worse.</p></div>
+    <span class="arw">&rarr;</span>
+    <div class="node" style="background:var(--cream)"><h3>Flag dies</h3><p style="font-size:14px">risk now looks lower</p></div>
+  </div>
+  <p class="rv mono" style="margin-top:1.2rem;font-weight:700">and then you retrain, on data your own model just cleaned up for you</p>
+  <div class="row rv" style="margin-top:1rem">
+    <div class="card" style="background:var(--blue);padding:1rem 1.2rem">
+      <p style="font-size:clamp(13px,1.05vw,17px);font-weight:700">This is the self-negating kind. It makes risk look lower than it is.</p></div>
+    <div class="card" style="background:var(--green);padding:1rem 1.2rem">
+      <p style="font-size:clamp(13px,1.05vw,17px);font-weight:700">Clinical informatics has a name for it. A model becoming a victim of its own success.</p></div>
+  </div>
+  <p class="rv cite" style="margin-top:.9rem">Performative prediction. Perdomo, Zrnic, Mendler-Dunner and Hardt, ICML 2020.<br>Victims of their own success: Lenert, Matheny and Walsh, JAMIA 2019.</p>
+</section>
+
+<!-- 13 TWO NOTIFICATIONS, phone -->
+<section class="panel bg-blue" data-s="3">
+  <span class="label rv">Same pipeline. Same data. Different sentence.</span>
+  <div class="phone rv">
+    <div class="notif strike">
+      <div class="appicon">W</div>
+      <div><span class="label mono" style="margin-bottom:.3rem">Wellness</span>
+        <h3 style="font-weight:700">Your Wellness Score dropped 18% this week.</h3></div>
+    </div>
+    <div class="notif" style="background:var(--green)">
+      <div class="appicon" style="background:var(--yellow)">W</div>
+      <div><span class="label mono" style="margin-bottom:.3rem">Wellness</span>
+        <h3 style="font-weight:700">Your sleep's been below your usual for three nights, and you've been checking in less. Does that match how you're feeling?</h3></div>
+    </div>
+  </div>
+  <h3 class="rv" style="margin-top:1.4rem">The second one doesn't know more. It just knows what it doesn't know.</h3>
+</section>
+
+<!-- 14a WHAT THE BIG ONES ACTUALLY USE -->
+<section class="panel bg-blush" data-s="3">
+  <span class="label rv">Strip the branding off and it's the same spine underneath</span>
+  <h3 class="rv">Overnight HRV is the primary signal in roughly 86% of them. Resting heart rate and sleep sit on top. Nearly all of them track those three.</h3>
+  <div class="row" style="margin-top:1.1rem">
+    <div class="card rv" style="background:var(--offwhite)">
+      <span class="mark" style="background:var(--pink)">WHOOP</span>
+      <p style="font-size:clamp(13px,1.02vw,17px);margin-top:.8rem">HRV during deep sleep, one clean reading. 30 day personal baseline. Strain 0 to 21, recovery as a percentage.</p></div>
+    <div class="card rv" style="background:var(--offwhite)">
+      <span class="mark" style="background:var(--blue)">OURA</span>
+      <p style="font-size:clamp(13px,1.02vw,17px);margin-top:.8rem">HRV sampled across the whole night. Adds body temperature and sleep debt, which is how it spots illness early.</p></div>
+    <div class="card rv" style="background:var(--offwhite)">
+      <span class="mark" style="background:var(--green)">GARMIN</span>
+      <p style="font-size:clamp(13px,1.02vw,17px);margin-top:.8rem">Body Battery 0 to 100, updated all day. Training Readiness blends six inputs including a 7 day HRV trend and real training load.</p></div>
+    <div class="card rv" style="background:var(--offwhite)">
+      <span class="mark" style="background:var(--yellow)">APPLE WATCH</span>
+      <p style="font-size:clamp(13px,1.02vw,17px);margin-top:.8rem">No readiness score of its own at all. People bolt on a third party app to get one.</p></div>
+  </div>
+  <p class="rv" style="margin-top:1.1rem;font-weight:800">Nothing exotic. Four cheap signals and a good personal baseline. The hard part is still what counts as normal for this person.</p>
+  <p class="rv cite" style="margin-top:.6rem">And a product decision hiding inside a health metric: WHOOP, Oura and Fitbit Daily Readiness are all subscription only. Garmin and Samsung give it away free.</p>
+</section>
+
+<!-- 14b SAME COLUMN, TWO MEANINGS -->
+<section class="panel" data-s="3">
+  <span class="label rv">Now look at what they call the same thing</span>
+  <div class="row rv" style="margin-top:.4rem">
+    <div class="card" style="background:var(--cream)">
+      <div style="display:flex;gap:.6rem;align-items:center">
+        <span class="mark" style="background:var(--pink)">WHOOP</span><span class="tag mono" style="box-shadow:none">hrv</span></div>
+      <svg viewBox="0 0 300 52" style="width:100%;margin-top:.9rem" aria-label="Measured only during the deep sleep window">
+        <rect x="2" y="16" width="296" height="22" fill="#FFFDF5" stroke="#000" stroke-width="3"/>
+        <rect x="112" y="16" width="64" height="22" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <text x="6" y="12" font-family="Space Grotesk" font-size="12" font-weight="700">one night</text>
+      </svg>
+      <p style="margin-top:.75rem;font-weight:800">One reading, taken during deep sleep.</p></div>
+    <div class="card" style="background:var(--cream)">
+      <div style="display:flex;gap:.6rem;align-items:center">
+        <span class="mark" style="background:var(--blue)">OURA</span><span class="tag mono" style="box-shadow:none">hrv</span></div>
+      <svg viewBox="0 0 300 52" style="width:100%;margin-top:.9rem" aria-label="Sampled across the whole night in multiple windows">
+        <rect x="2" y="16" width="296" height="22" fill="#FFFDF5" stroke="#000" stroke-width="3"/>
+        <rect x="14" y="16" width="46" height="22" fill="#99E885" stroke="#000" stroke-width="3"/>
+        <rect x="80" y="16" width="46" height="22" fill="#99E885" stroke="#000" stroke-width="3"/>
+        <rect x="146" y="16" width="46" height="22" fill="#99E885" stroke="#000" stroke-width="3"/>
+        <rect x="212" y="16" width="46" height="22" fill="#99E885" stroke="#000" stroke-width="3"/>
+        <text x="6" y="12" font-family="Space Grotesk" font-size="12" font-weight="700">one night</text>
+      </svg>
+      <p style="margin-top:.75rem;font-weight:800">Sampled all night, averaged across windows.</p></div>
+  </div>
+  <h2 class="rv" style="margin-top:1.2rem;font-size:clamp(18px,2.2vw,36px)">Same column name. Union those two<br>and you've quietly broken your own data.<br><span style="background:var(--yellow)">Nothing errors.</span></h2>
+</section>
+
+<!-- 15 STREAKS BOTH WAYS -->
+<section class="panel bg-cream" data-s="3">
+  <span class="label rv">Streaks and leaderboards</span>
+  <div class="row" style="margin-top:.3rem">
+    <div class="card rv" style="background:var(--green)"><h3>They work</h3>
+      <svg viewBox="0 0 300 92" style="width:100%;margin-top:.8rem" aria-label="A funnel with most users draining away">
+        <path d="M20 12 h260 l-88 46 v26 h-84 v-26 Z" fill="#FFFDF5" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="52" cy="26" r="7" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <circle cx="86" cy="26" r="7" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <circle cx="120" cy="26" r="7" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <circle cx="154" cy="26" r="7" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <circle cx="188" cy="26" r="7" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <circle cx="222" cy="26" r="7" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <circle cx="150" cy="72" r="7" fill="#FE90E8" stroke="#000" stroke-width="3"/>
+        <text x="252" y="76" font-family="Space Grotesk" font-size="14" font-weight="700">who's left</text>
+      </svg>
+      <p style="margin-top:.6rem">Dropout is the biggest problem in this whole space. Most of your users will be gone. An app nobody opens helps nobody, so engagement isn't a dirty word.</p></div>
+    <div class="card rv" style="background:var(--pink)">
+      <div style="display:flex;align-items:center;gap:.7rem">
+        <svg width="30" height="38" viewBox="0 0 24 30" aria-hidden="true">
+          <path d="M12 1 C17 9 21 12 21 19 a9 9 0 0 1 -18 0 C3 12 8 10 12 1Z" fill="#F7CB46" stroke="#000" stroke-width="2.5"/>
+          <path d="M2 22 l8 -5 l-5 -3 l9 -5" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <h3>And also</h3></div>
+      <p style="margin-top:.65rem"><strong>Anhedonia.</strong> People who are depressed find rewards less motivating. Your streak is weakest on the users you built it for.</p>
+      <p style="margin-top:.65rem"><strong>Deletion.</strong> Runners removed sessions from <span class="mark" style="padding:.1rem .4rem;font-size:13px;box-shadow:none;background:var(--offwhite)">STRAVA</span> that felt too slow. Your users are deleting rows in production, and not at random.</p>
+      <p class="cite" style="margin-top:.6rem">Gamification meta-analysis, JMIR Mental Health 2021. Club runners study, Behavioral Sciences 2026.</p></div>
+  </div>
+</section>
+
+<!-- 16 THE RULE -->
+<section class="panel bg-black" data-s="3">
+  <div class="deco d3"></div>
+  <span class="label rv">The rule</span>
+  <h1 class="rv" style="font-size:clamp(27px,4.8vw,82px)">Gamify the act<br>of reporting.<br><span style="color:var(--yellow)">Never the content<br>of the report.</span></h1>
+  <p class="rv" style="margin-top:1.5rem;color:var(--offwhite);font-weight:700">Can an honest bad day break the reward? Then you're paying people to lie to you.</p>
+</section>
+
+<!-- 17 TAKEAWAYS -->
+<section class="panel" data-s="3" style="border-bottom:none">
+  <div class="deco d1"></div>
+  <span class="label rv">Take this to the hackathon</span>
+  <div class="row" style="margin-top:.1rem">
+    <div class="card rv" style="background:var(--pink)"><h3>Who made this number?</h3></div>
+    <div class="card rv" style="background:var(--green)"><h3>What does missing mean?</h3></div>
+    <div class="card rv" style="background:var(--blue)"><h3>Do you show it back?</h3></div>
+  </div>
+  <p class="rv" style="margin-top:1.3rem;font-weight:800;font-size:clamp(15px,1.35vw,22px)">
+    Ship one threshold for everyone and you've decided your app works for average people.
+    Aisha isn't average. Almost nobody is.</p>
+  <div class="rv" style="margin-top:1.4rem">
+    <span class="tag" style="background:var(--yellow);color:var(--black);text-transform:none;letter-spacing:0">github.com/ramyashreeshetty/cs-girlies-workshop</span>
+  </div>
+  <p class="rv cite" style="margin-top:.7rem">The SQL, these slides, and every source I cited.</p>
+  <!-- Swap in a crisis resource that suits your EST and IST audience -->
+  <p class="rv mono" style="margin-top:1rem;font-size:13px;max-width:70ch">
+    If any of this sits close to home, please talk to someone you trust, or a crisis line where you are.</p>
+</section>
+
+<script>
+const panels=[...document.querySelectorAll('.panel')];
+const rails=[...document.querySelectorAll('#rail span')];
+const bar=document.getElementById('bar'),count=document.getElementById('count');
+const pad=n=>String(n).padStart(2,'0');
+
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting) e.target.classList.add('in');
+}),{threshold:.35});
+panels.forEach(p=>io.observe(p));
+
+function update(){
+  const i=Math.min(Math.round(window.scrollY/window.innerHeight),panels.length-1);
+  count.textContent=pad(i+1)+' / '+pad(panels.length);
+  const max=document.body.scrollHeight-window.innerHeight;
+  bar.style.width=(max>0?(window.scrollY/max)*100:0)+'%';
+  const s=panels[i].dataset.s;
+  rails.forEach(r=>r.classList.toggle('on',r.dataset.s===s));
+}
+function go(d){
+  const i=Math.round(window.scrollY/window.innerHeight);
+  panels[Math.max(0,Math.min(panels.length-1,i+d))].scrollIntoView({behavior:'smooth'});
+}
+addEventListener('scroll',update,{passive:true});
+addEventListener('keydown',e=>{
+  if(['ArrowDown','ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();go(1)}
+  if(['ArrowUp','ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(-1)}
+  if(e.key==='Home'){e.preventDefault();panels[0].scrollIntoView({behavior:'smooth'})}
+  if(e.key==='End'){e.preventDefault();panels[panels.length-1].scrollIntoView({behavior:'smooth'})}
+});
+update();
+</script>
+</body>
+</html>
